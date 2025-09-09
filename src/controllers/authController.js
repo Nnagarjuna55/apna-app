@@ -5,6 +5,9 @@ const User = require('../models/User');
 
 // Generate JWT Token
 const generateToken = (id) => {
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not set in environment variables");
+    }
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
@@ -45,8 +48,8 @@ exports.register = async (req, res) => {
             token: generateToken(user._id),
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Register Error ❌:", err.message);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -77,8 +80,8 @@ exports.login = async (req, res) => {
             token: generateToken(user._id),
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Login Error ❌:", err.message);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -88,9 +91,12 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
         res.json(user);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Profile Error ❌:", err.message);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
